@@ -1,0 +1,135 @@
+/*
+ID: paulo.t1
+PROG: shopping
+LANG: C++11
+*/
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <map>
+#include <set>
+#include <vector>
+#include <algorithm>
+#define ll long long
+#define local
+#ifdef local
+#define fin cin
+#define fout cout
+#endif
+
+using namespace std;
+
+typedef pair<int, int> ii;
+#ifndef local
+ofstream fout ("shopping.out");
+ifstream fin ("shopping.in");
+#endif
+
+struct offer {
+  vector<ii> products; // k, c
+  int price;
+};
+
+int getp(ii &p) { return p.second; }
+int getc(ii &p) { return p.second; }
+int getk(ii &p) { return p.first; }
+
+int no;
+offer offers[99];
+map<int, ii> basket; // k, p;
+map<string, int> dp; // basket, price
+
+string hash_basket() {
+  string ans;
+  for (auto &it : basket) {
+    ans += to_string(it.first) + " " +
+        to_string(getk(it.second)) + ",";
+  }
+  return ans;
+}
+
+int get_price() {
+  int price = 0;
+  for (auto &it : basket) {
+    price += getk(it.second) * getp(it.second);
+  }
+  return price;
+}
+
+bool can_apply_offer(int o) {
+  for (int i = 0; i < offers[o].products.size(); i++) {
+    int k = getk(basket[getc(offers[o].products[i])]);
+    if (k < getk(offers[o].products[i])) return false;
+  }
+  return true;
+}
+
+void apply_offer(int o) {
+  for (int i = 0; i < offers[o].products.size(); i++) {
+    int c = getc(offers[o].products[i]);
+    int k = getk(offers[o].products[i]);
+    basket[c].first -= k;
+  }
+}
+
+void unapply_offer(int o) {
+  for (int i = 0; i < offers[o].products.size(); i++) {
+    int c = getc(offers[o].products[i]);
+    int k = getk(offers[o].products[i]);
+    basket[c].first += k;
+  }
+}
+
+bool is_basket_empty() {
+  for (auto &it : basket)
+    if (getk(it.second) != 0) return false;
+  return true;
+}
+
+// Gets the price
+int dfs() {
+  string h = hash_basket();
+  if (is_basket_empty())
+    return 0;
+  else if (dp.find(h) != dp.end())
+    return dp[h];
+
+  int price = get_price();
+  for (int i = 0; i < no; i++) {
+    if (can_apply_offer(i)) {
+      apply_offer(i);
+      string h2 = hash_basket();
+      if (dp.find(h2) != dp.end())
+        price = min(price, offers[i].price + dp[h2]);
+      else
+        price = min(price, offers[i].price + dfs());
+      unapply_offer(i);
+    }
+  }
+  dp[h] = price;
+  return price;
+}
+
+int main() {
+  fin >> no;
+  for (int i = 0; i < no; i++) {
+    int n;
+    fin >> n;
+    for (int j = 0; j < n; j++) {
+      int c, k;
+      fin >> c >> k;
+      offers[i].products.push_back(make_pair(k, c));
+    }
+    fin >> offers[i].price;
+  }
+  int b;
+  fin >> b;
+  for (int i = 0; i < b; i++) {
+    int c, k, p;
+    fin >> c >> k >> p;
+    basket[c] = make_pair(k, p);
+  }
+
+  fout << dfs() << endl;
+  return 0;
+}

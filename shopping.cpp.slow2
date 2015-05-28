@@ -1,0 +1,162 @@
+/*
+ID: paulo.t1
+PROG: shopping
+LANG: C++11
+*/
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <map>
+#include <set>
+#include <vector>
+#include <algorithm>
+#define ll long long
+#define local
+#ifdef local
+#define fin cin
+#define fout cout
+#endif
+
+using namespace std;
+typedef pair<int, int> ii;
+#ifndef local
+ofstream fout ("shopping.out");
+ifstream fin ("shopping.in");
+#endif
+
+struct offer {
+  vector<ii> products; // k, c
+  int price;
+};
+
+int getp(ii &p) { return p.second; }
+int getc(ii &p) { return p.second; }
+int getk(ii &p) { return p.first; }
+
+int no, nb;
+offer offers[99];
+int quantity[5];
+int code[5];
+int price[5];
+map<vector<int>, int> dp;
+
+bool is_done(vector<int> &vec) {
+  for (int i = 0; i < nb; i++)
+    if (vec[i] != quantity[i]) return false;
+  return true;
+}
+
+int get_ind(int c, vector<int> &arr) {
+  for (int i = 0; i < nb; i++)
+    if (c == code[i]) return i;
+  return -1;
+}
+
+int get_val(int c, vector<int> arr) {
+  int i = get_ind(c, arr);
+  return (i > -1) ? arr[i] : -1;
+}
+
+int get_cost(vector<int> &arr) {
+  int ans = 0;
+  for (int i = 0; i < nb; i++)
+    ans += arr[i] * price[i];
+  return ans;
+}
+
+bool can_apply_offer(vector<int> &state, int o) {
+  for (int i = 0; i < offers[o].products.size(); i++) {
+    int needed = getk(offers[o].products[i]);
+    int c = getc(offers[o].products[i]);
+    if (needed > get_val(c, state)) return false;
+  }
+  return true;
+}
+
+void apply_offer(vector<int> &state, int o) {
+  for (int i = 0; i < offers[o].products.size(); i++) {
+    int needed = getk(offers[o].products[i]);
+    int c = getc(offers[o].products[i]);
+    state[get_ind(c, state)] -= needed;
+  }
+}
+
+void set_price(vector<int> &vec, int o) {
+  if (o == -1) {
+    dp[vec] = get_cost(vec);
+    return;
+  }
+  if (can_apply_offer(vec, o)) {
+    vector<int> cop = vec;
+    apply_offer(cop, o);
+    int nprice = offers[o].price + dp[cop];
+    dp[vec] = min(nprice, dp[vec]);
+  }
+}
+
+void permute(vector<int> &start, int o, int b) {
+  set_price(start, o);
+  if (b >= nb) return;
+
+  for (int i = 0; i <= quantity[b]; i++) {
+      start[b] = i;
+      permute(start, o, b+1);
+      start[b] = 0;
+  }
+}
+
+int main() {
+  fin >> no;
+  for (int i = 0; i < no; i++) {
+    int n;
+    fin >> n;
+    for (int j = 0; j < n; j++) {
+      int c, k;
+      fin >> c >> k;
+      offers[i].products.push_back(make_pair(k, c));
+    }
+    fin >> offers[i].price;
+  }
+  fin >> nb;
+  for (int i = 0; i < nb; i++) {
+    fin >> code[i] >> quantity[i] >> price[i];
+  }
+
+  vector<int> start;
+  for (int i = 0; i < nb; i++)
+    start.push_back(0);
+
+  for (int i = -1; i < no; i++)
+    permute(start, i, 0);
+
+
+  cout << endl;
+  for (auto &it : dp) {
+    for (int i = 0; i < it.first.size(); i++)
+      cout << it.first[i] << ' ';
+    cout << ": " << it.second << endl;
+  }
+
+  return 0;
+}
+
+  /*
+  cout << "basket" <<endl;
+  for (int i =0 ; i < nb; i++) {
+    cout << code[i] << ' '  << (int) quantity[i] <<  ' ' << price[i] << endl;
+  }
+  cout << "start ";
+  for (int i = 0; i < start.size(); i++)
+    cout << start[i] << ' ';
+  cout << endl;
+  */
+
+
+/*
+ *
+
+  for (int i = 0; i < vec.size(); i++)
+    cout << (int) vec[i] << ' ';
+  cout << endl;
+  cout << "can apply " << can_apply_offer(vec, 1) << endl;
+  */
